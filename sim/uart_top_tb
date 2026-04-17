@@ -1,0 +1,84 @@
+`timescale 1ns / 1ps
+
+module uart_top_tb();
+    reg clk;
+    reg rst_n;
+    reg tx_start;
+    reg [7:0] tx_byte;
+    wire tx_line;   
+    wire tx_busy;
+    wire [7:0] rx_byte;
+    wire rx_done;
+
+ 
+    wire [9:0] ram_addr;
+    wire [7:0] ram_data_in;
+    wire ram_we;
+
+    // 1. Instantiate the Top Level UART System
+    uart_top #(.BAUD_DIV(100)) dut ( 
+        .clk(clk),
+        .rst_n(rst_n),
+        .tx_start(tx_start),
+        .tx_byte(tx_byte),
+        .tx_line(tx_line),
+        .tx_busy(tx_busy),
+        .rx_line(tx_line), 
+        .rx_byte(rx_byte),
+        .rx_done(rx_done)
+    );
+
+    // 2. Instantiate the RAM Module
+    uart_ram #(.DATA_WIDTH(8), .ADDR_WIDTH(10)) memory_unit (
+        .clk(clk),
+        .rst_n(rst_n),
+        .rx_data(rx_byte),
+        .rx_done(rx_done),
+        .ram_addr(ram_addr),
+        .ram_data_in(ram_data_in),
+        .ram_we(ram_we)
+    );
+    always #5 clk = ~clk;
+
+    initial begin
+        // Initialize Signals
+        clk = 0;
+        rst_n = 0;
+        tx_start = 0;
+        tx_byte = 8'h0;
+
+        // Reset the system
+        #20 rst_n = 1;
+        #20;
+
+        // --- TEST CASE 1: Send Byte 0xA5 ---
+        $display("Time: %t | Starting Transmission: 0xA5", $time);
+        tx_byte = 8'hA5;
+        tx_start = 1;
+        #10 tx_start = 0;
+
+        // Wait for Transmission to finish
+        wait(rx_done);
+        #20;
+        if (ram_data_in == 8'hA5 && ram_we == 0) 
+            $display("Time: %t | SUCCESS: Received 0xA5 and stored in RAM at Address %d", $time, ram_addr);
+        else
+            $display("Time: %t | ERROR: RAM Data Mismatch!", $time);
+
+        // --- TEST CASE 2: Send Byte 0x3C ---
+        #100;
+        $display("Time: %t | Starting Transmission: 0x3C", $time);
+        tx_byte = 8'h3C;
+        tx_start = 1;
+        #10 tx_start = 0;
+
+        wait(rx_done);
+        #20;
+        $display("Time: %t | RAM Address incremented to: %d", $time, ram_addr);
+
+        #500;
+        $display("Simulation Complete.");
+        $finish;
+    end
+
+endmodule
