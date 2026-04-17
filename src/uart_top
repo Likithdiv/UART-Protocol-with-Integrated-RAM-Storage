@@ -1,0 +1,29 @@
+module uart_top (
+    input clk, rst_n,
+    input tx_start,
+    input [7:0] tx_byte,
+    output tx_line,
+    output tx_busy,
+    input rx_line,
+    output [7:0] rx_byte,
+    output rx_done
+);
+    parameter BAUD_DIV = 10416;
+
+    uart_tx #(.TICKS_PER_BIT(BAUD_DIV)) transmitter (
+        .clk(clk), 
+        .rst_n(rst_n),      
+        .tx_start(tx_start), 
+        .tx_data(tx_byte),
+        .tx(tx_line), 
+        .tx_busy(tx_busy)
+    );
+
+    uart_rx #(.TICKS_PER_BIT(BAUD_DIV)) receiver (
+        .clk(clk), 
+        .rst_n(rst_n),     
+        .rx(rx_line), 
+        .rx_data(rx_byte), 
+        .rx_done(rx_done)
+    );
+endmodule
