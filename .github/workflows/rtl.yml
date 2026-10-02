@@ -1,0 +1,13 @@
+name: RTL checks
+on: [push, pull_request]
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install simulation and lint tools
+        run: sudo apt-get update && sudo apt-get install -y iverilog verilator
+      - name: Run regressions
+        run: python3 scripts/run_tests.py
+      - name: Lint synthesizable RTL
+        run: verilator --lint-only -Wall --top-module uart_top src/*.v

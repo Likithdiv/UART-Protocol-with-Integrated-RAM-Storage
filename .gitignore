@@ -1,0 +1,4 @@
+*.vvp
+*.vcd
+obj_dir/
+__pycache__/
